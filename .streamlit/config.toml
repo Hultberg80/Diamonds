@@ -1,0 +1,4 @@
+[theme]
+base="dark"  # eller "dark"
+primaryColor="#4CAF50"  # grön (ändra till vad du vill)
+font="sans serif"

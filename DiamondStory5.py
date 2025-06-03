@@ -283,7 +283,7 @@ elif page == "Kategoriska Egenskaper":
     st.header("Analys av Kategoriska Egenskaper")
     
     st.info("""
-    💬 *"Spelar diamantens kvalitet någon roll för priset?"*
+    *"Spelar diamantens kvalitet någon roll för priset?"*
 
     Här fokuserar vi på de egenskaper som ofta kräver expertbedömning:
 
@@ -356,57 +356,54 @@ elif page == "Kategoriska Egenskaper":
         - SI1, SI2 har defekter synliga för tränat öga
         """)
 
-    # SAMBAND & KORRELATIONER
 elif page == "Samband & Korrelationer":
     st.header("Samband och Korrelationer")
 
     st.info("""
-    🔗 Här upptäcker vi vilka faktorer som verkligen påverkar diamantpriset!
+    Här upptäcker vi vilka faktorer som verkligen påverkar diamantpriset!
     Karat är den starkaste prispåverkande faktorn, medan dimensioner (x,y,z) också spelar stor roll.
     Korrelationsmatrisen avslöjar dolda samband mellan egenskaper.
     """)
-    
+
     # Spridningsdiagram
     st.subheader("Spridningsdiagram")
     x_var = st.selectbox("Välj X-variabel:", options=['carat', 'depth', 'table', 'x', 'y', 'z', 'volym'])
     y_var = st.selectbox("Välj Y-variabel:", options=['price', 'carat', 'depth', 'table', 'x', 'y', 'z', 'volym'], index=0)
     hue_var = st.selectbox("Välj gruppering (färg):", options=[None, 'cut', 'color', 'clarity'])
-    
+
     fig, ax = create_figure()
     if hue_var:
         sns.scatterplot(x=x_var, y=y_var, hue=hue_var, data=filtered_df, ax=ax)
     else:
         sns.scatterplot(x=x_var, y=y_var, data=filtered_df, ax=ax)
-    
+
     ax.set_title(f'Samband mellan {x_var} och {y_var}')
     st.pyplot(fig)
-    
-    # Korrelationsmatris
+
+    # Visa sparad korrelationsmatris som bild
     st.subheader("Korrelationsmatris")
+    st.markdown("Här ser du sambanden mellan numeriska egenskaper. Från mörkblå (svag korrelation) till mörkröd (stark korrelation).")
+    st.image("korrelationsmatris.png", caption="Korrelationsmatris för numeriska variabler", use_container_width=True)
+
+    # Korrelationstoppar
+    st.subheader("Starkaste korrelationer")
     numeric_df = filtered_df.select_dtypes(include=[np.number])
     corr_matrix = numeric_df.corr()
-    
-    fig, ax = create_figure(figsize=(10, 8))
-    sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', linewidths=0.5, ax=ax)
-    ax.set_title('Korrelationsmatris för numeriska variabler')
-    st.pyplot(fig)
-    
-    # Korrelationsanalys
-    st.subheader("Starkaste korrelationer")
     corr_unstack = corr_matrix.unstack()
     corr_unstack = corr_unstack[corr_unstack < 1.0]  # Ta bort självkorrelationer
     strongest_corr = corr_unstack.abs().sort_values(ascending=False).head(5)
-    
+
     for i, (pair, corr_value) in enumerate(strongest_corr.items()):
         var1, var2 = pair
         st.write(f"{i+1}. {var1} - {var2}: {corr_value:.3f}")
+
 
     # KARATGRUPPSANALYS
 elif page == "Karatgruppsanalys":
     st.header("Karatgruppsanalys")
 
     st.info("""
-    💬 *"Är större diamanter alltid bättre?"*
+    *"Är större diamanter alltid bättre?"*
 
     Vi delar upp diamanterna i olika viktklasser och upptäcker ett intressant mönster:
 
@@ -537,7 +534,7 @@ elif page == "Karatgruppsanalys":
     """)
     
     # Visa mönstret i form av trendanalys
-    st.subheader("📊 Trendanalys: Storlek vs Kvalitet")
+    st.subheader("Trendanalys: Storlek vs Kvalitet")
     
     # Skapa trendvisualisering
     col1, col2 = st.columns(2)

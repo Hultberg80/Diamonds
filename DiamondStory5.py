@@ -291,7 +291,7 @@ elif page == "Kategoriska Egenskaper":
     - **Färg (Color):** färglösa diamanter är generellt mer eftertraktade
     - **Klarhet (Clarity):** hur många inre fel och ytfel diamanten har
 
-    Vi ser tydligt att högre kvalitet (t.ex. Ideal cut, färg D–F, klarhet IF–VVS1) ofta leder till högre pris. Men dessa faktorer påverkar inte priset lika mycket som karatvikten.
+    Här kan vi med hjälp av slidern till vänster, titta på fördelningen av diamanter i olika karatintervall till exempel.
     """)
     
     # Välj variabel
@@ -306,8 +306,18 @@ elif page == "Kategoriska Egenskaper":
         st.subheader(f"Stapeldiagram för {cat_var}")
         fig, ax = create_figure()
         cat_counts = filtered_df[cat_var].value_counts().sort_index()
-        sns.barplot(x=cat_counts.index, y=cat_counts.values, ax=ax)
+        sns.barplot(
+        x=cat_counts.index,
+        y=cat_counts.values,
+        hue=cat_counts.index,           # Färg per kategori
+        palette='plasma',               # Färgstark palett
+        legend=False,
+        ax=ax
+        )
+    
         ax.set_title(f'Antal diamanter per {cat_var}')
+        ax.set_xlabel(cat_var.capitalize())
+        ax.set_ylabel("Antal")
         ax.tick_params(axis='x', rotation=45)
         st.pyplot(fig)
     
@@ -327,10 +337,21 @@ elif page == "Kategoriska Egenskaper":
     avg_price = filtered_df.groupby(cat_var)['price'].mean().sort_values(ascending=False)
     
     fig, ax = create_figure(figsize=(10, 5))
-    sns.barplot(x=avg_price.index, y=avg_price.values, ax=ax)
+    sns.barplot(
+    x=avg_price.index,
+    y=avg_price.values,
+    hue=avg_price.index,      # Färg per kategori
+    palette='plasma',         # Färgpalett
+    dodge=False,              # Viktigt för att inte separera staplarna
+    legend=False,
+    ax=ax
+    )
+
     ax.set_title(f'Genomsnittspris per {cat_var}')
     ax.set_ylabel('Genomsnittspris (USD)')
+    ax.set_xlabel(cat_var.capitalize())
     ax.tick_params(axis='x', rotation=45)
+
     st.pyplot(fig)
     
     # Lägg till insikter baserat på variabel
@@ -360,9 +381,10 @@ elif page == "Samband & Korrelationer":
     st.header("Samband och Korrelationer")
 
     st.info("""
-    Här upptäcker vi vilka faktorer som verkligen påverkar diamantpriset!
-    Karat är den starkaste prispåverkande faktorn, medan dimensioner (x,y,z) också spelar stor roll.
-    Korrelationsmatrisen avslöjar dolda samband mellan egenskaper.
+    I spridningsdiagrammet kan vi lite bättre se (även om det är plottrigt)
+    hur kvaliteten (color, cut, clarity) minskar desto större diamanten är. Vi kan även se att "depth" och "table"
+    inte har någon korrelation alls med priset, medan volymen har en stark korrelation, vilket
+    vi även kan se i korrelationsmatrisen.
     """)
 
     # Spridningsdiagram

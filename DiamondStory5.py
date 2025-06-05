@@ -124,7 +124,7 @@ def create_figure(figsize=(10, 6)):
 # ÖVERSIKT
 if page == "Översikt":
 
-    st.title("💎 Vad avgör priset på en diamant?")
+    st.title("Vad avgör priset på en diamant?")
     st.info("""
     Vad är det som avgör priset på en diamant? I denna analys ska vi försöka ta reda på det.
     Och om du inte kan allt om diamanter,

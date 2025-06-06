@@ -291,7 +291,8 @@ elif page == "Kategoriska Egenskaper":
     - **Färg (Color):** färglösa diamanter är generellt mer eftertraktade
     - **Klarhet (Clarity):** hur många inre fel och ytfel diamanten har
 
-    Här kan vi med hjälp av slidern till vänster, titta på fördelningen av diamanter i olika karatintervall till exempel.
+    Här kan vi med hjälp av slidern till vänster, titta på kvaliteten på diamanter i olika karatintervall
+    och se hur det påverkar priset *och kvaliteten*.
     """)
     
     # Välj variabel
@@ -303,22 +304,36 @@ elif page == "Kategoriska Egenskaper":
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader(f"Stapeldiagram för {cat_var}")
-        fig, ax = create_figure()
-        cat_counts = filtered_df[cat_var].value_counts().sort_index()
-        sns.barplot(
-        x=cat_counts.index,
-        y=cat_counts.values,
-        hue=cat_counts.index,           # Färg per kategori
-        palette='plasma',               # Färgstark palett
-        legend=False,
-        ax=ax
-        )
+        st.subheader(f"Antal diamanter och genomsnittspris per {cat_var}")
     
-        ax.set_title(f'Antal diamanter per {cat_var}')
-        ax.set_xlabel(cat_var.capitalize())
-        ax.set_ylabel("Antal")
-        ax.tick_params(axis='x', rotation=45)
+        cat_counts = filtered_df[cat_var].value_counts().sort_index()
+        avg_price = filtered_df.groupby(cat_var)['price'].mean().reindex(cat_counts.index)
+
+        fig, ax1 = plt.subplots(figsize=(5, 3))  # Mindre figurstorlek
+
+        # Staplar: antal
+        sns.barplot(
+            x=cat_counts.index,
+            y=cat_counts.values,
+            hue=cat_counts.index,
+            palette='plasma',
+            dodge=False,
+            legend=False,
+            ax=ax1
+        )
+        ax1.set_ylabel("Antal diamanter", color='black')
+        ax1.set_xlabel(cat_var.capitalize())
+        ax1.tick_params(axis='y', labelcolor='black')
+        ax1.tick_params(axis='x', rotation=45)
+        ax1.set_title(f"{cat_var.capitalize()} – Antal och genomsnittspris", fontsize=10)
+
+        # Linje: genomsnittspris
+        ax2 = ax1.twinx()
+        ax2.plot(cat_counts.index, avg_price.values, color='black', marker='o', linewidth=2, label='Genomsnittspris')
+        ax2.set_ylabel("Genomsnittspris (USD)", color='black')
+        ax2.tick_params(axis='y', labelcolor='black')
+
+        fig.tight_layout()
         st.pyplot(fig)
     
     with col2:
@@ -331,18 +346,59 @@ elif page == "Kategoriska Egenskaper":
             'Procent': (cat_counts.values / cat_counts.sum() * 100).round(1)
         })
         st.dataframe(counts_df, use_container_width=True, hide_index=True)
+
+        # Insikter baserat på variabel
+    if cat_var == 'cut':
+        st.markdown("""
+        **Insikter om slipning:**
+        Intervall 0-5 carat (även om vi inte tittar på carat över 3)
+        - "Ideal cut" är vanligast och billigast
+        - "Premium cut" är dyrast
+        - 1-2 carat - Här spelar cut stor roll. Bättre slipning - högre pris
+        - 2-3 carat - Här hittar vi flest diamanter med premium slipning och dessa är dyra!
+        """)
+    elif cat_var == 'color':
+        st.markdown("""
+        **Insikter om färg:**
+        Intervall 0-5 carat (även om vi inte tittar på carat över 3)
+                    
+        Färgskala där D är bäst och J sämst
+        - D, E, F, G, H, I, J 
+        
+        - Tittar vi på 0-5 karat så hittar vi flest diamanter med "mellan"
+        färg och bra pris.
+        - De dyra diamanterna har sämsta färgen och de billigaste har den bästa.
+        - 1-2 karat: Här gäller - Bra färg, högt pris! Tydlig dipp i färg och pris när karaten närmar sig 2.
+        - 2-3 karat: Endast ett fåtal diamanter med den bästa färgen. Vill du ha en stor diamant till bättre pris,
+                    så är det sämsta färgen som gäller!
+        """)
+    elif cat_var == 'clarity':
+        st.markdown("""
+        **Insikter om klarhet:**
+        Intervall 0-5 carat (även om vi inte tittar på carat över 3)
+        - IF (Internally Flawless) är perfekt och dyrast
+        - VS1, VS2 har små defekter synliga under förstoring
+        - SI1, SI2 har defekter synliga för tränat öga
+        
+        - I regel gäller: Ju större diamant desto sämre klarhet.
+        - Detta ser vi tydligast i karatintervallet 1-2.
+        - 0-1 karat: Här verkar inte klarheten spela någon roll
+        där de flesta diamanterna har lite sämre kvalitet.
+        - 1-2 karat: Här korrelerar priset starkt med klarheten på diamanten
+        och de dyraste diamanterna har också det högsta priset.
+        """)
     
     # Genomsnittligt pris per kategori
     st.subheader(f"Genomsnittspris per {cat_var}")
     avg_price = filtered_df.groupby(cat_var)['price'].mean().sort_values(ascending=False)
     
-    fig, ax = create_figure(figsize=(10, 5))
+    fig, ax = create_figure(figsize=(8, 3))
     sns.barplot(
     x=avg_price.index,
     y=avg_price.values,
     hue=avg_price.index,      # Färg per kategori
     palette='plasma',         # Färgpalett
-    dodge=False,              # Viktigt för att inte separera staplarna
+    dodge=False,              # För att inte separera staplarna
     legend=False,
     ax=ax
     )
@@ -353,71 +409,42 @@ elif page == "Kategoriska Egenskaper":
     ax.tick_params(axis='x', rotation=45)
 
     st.pyplot(fig)
-    
-    # Lägg till insikter baserat på variabel
-    if cat_var == 'cut':
-        st.markdown("""
-        **Insikter om slipning:**
-        - "Ideal" och "Premium" cut har ofta högst pris
-        - Slipningskvalitet påverker hur ljuset reflekteras
-        - "Fair" cut är billigast men mindre attraktiv
-        """)
-    elif cat_var == 'color':
-        st.markdown("""
-        **Insikter om färg:**
-        - D, E, F är färglösa och dyrast
-        - G, H, I är nästan färglösa 
-        - J är synligt färgad och billigast
-        """)
-    elif cat_var == 'clarity':
-        st.markdown("""
-        **Insikter om klarhet:**
-        - IF (Internally Flawless) är perfekt och dyrast
-        - VS1, VS2 har små defekter synliga under förstoring
-        - SI1, SI2 har defekter synliga för tränat öga
-        """)
+
 
 elif page == "Samband & Korrelationer":
     st.header("Samband och Korrelationer")
 
     st.info("""
-    I spridningsdiagrammet kan vi lite bättre se (även om det är plottrigt)
-    hur kvaliteten (color, cut, clarity) minskar desto större diamanten är. Vi kan även se att "depth" och "table"
-    inte har någon korrelation alls med priset, medan volymen har en stark korrelation, vilket
+    - I spridningsdiagrammet kan vi lite bättre se (även om det är plottrigt)
+    hur kvaliteten (color, cut, clarity) minskar desto större (i karat) diamanten är.
+    - På samma sätt ser vi att priset ökar, desto större (i karat) diamanten är.
+    - Vi kan även se att "depth" och "table"
+    inte har någon korrelation alls med priset, medan volymen (x, y, z) har en stark korrelation. Detta kan
     vi även kan se i korrelationsmatrisen.
     """)
 
     # Spridningsdiagram
     st.subheader("Spridningsdiagram")
-    x_var = st.selectbox("Välj X-variabel:", options=['carat', 'depth', 'table', 'x', 'y', 'z', 'volym'])
-    y_var = st.selectbox("Välj Y-variabel:", options=['price', 'carat', 'depth', 'table', 'x', 'y', 'z', 'volym'], index=0)
-    hue_var = st.selectbox("Välj gruppering (färg):", options=[None, 'cut', 'color', 'clarity'])
+    x_var = st.selectbox("Välj X-variabel:", options=['carat', 'depth', 'table', 'x', 'y', 'z', 'volume'])
+    y_var = st.selectbox("Välj Y-variabel:", options=['price', 'carat', 'depth', 'table', 'x', 'y', 'z', 'volume'], index=0)
+    hue_var = st.selectbox("Välj gruppering (färg):", options=['(ingen)', 'cut', 'color', 'clarity'])
 
-    fig, ax = create_figure()
-    if hue_var:
+    fig, ax = plt.subplots()
+    if hue_var != '(ingen)':
         sns.scatterplot(x=x_var, y=y_var, hue=hue_var, data=filtered_df, ax=ax)
     else:
         sns.scatterplot(x=x_var, y=y_var, data=filtered_df, ax=ax)
 
     ax.set_title(f'Samband mellan {x_var} och {y_var}')
+    ax.set_xlabel(x_var.capitalize())
+    ax.set_ylabel(y_var.capitalize())
+
     st.pyplot(fig)
 
     # Visa sparad korrelationsmatris som bild
     st.subheader("Korrelationsmatris")
     st.markdown("Här ser du sambanden mellan numeriska egenskaper. Från mörkblå (svag korrelation) till mörkröd (stark korrelation).")
     st.image("korrelationsmatris.png", caption="Korrelationsmatris för numeriska variabler", use_container_width=True)
-
-    # Korrelationstoppar
-    st.subheader("Starkaste korrelationer")
-    numeric_df = filtered_df.select_dtypes(include=[np.number])
-    corr_matrix = numeric_df.corr()
-    corr_unstack = corr_matrix.unstack()
-    corr_unstack = corr_unstack[corr_unstack < 1.0]  # Ta bort självkorrelationer
-    strongest_corr = corr_unstack.abs().sort_values(ascending=False).head(5)
-
-    for i, (pair, corr_value) in enumerate(strongest_corr.items()):
-        var1, var2 = pair
-        st.write(f"{i+1}. {var1} - {var2}: {corr_value:.3f}")
 
 
     # KARATGRUPPSANALYS
@@ -427,7 +454,7 @@ elif page == "Karatgruppsanalys":
     st.info("""
     *"Är större diamanter alltid bättre?"*
 
-    Vi delar upp diamanterna i olika viktklasser och upptäcker ett intressant mönster:
+    Vi delar upp diamanterna i olika viktklasser och ser ett fortsatt mönster:
 
     - **Ju större diamant, desto högre pris** – men...
     - **Kvaliteten (cut, clarity, color) sjunker ofta när vikten ökar**
@@ -479,7 +506,7 @@ elif page == "Karatgruppsanalys":
     group_summary.columns = ['mean_price', 'median_price', 'count', 'mean_volume', 'mean_clarity_ord', 'mean_cut_ord', 'mean_color_ord']
     group_summary = group_summary.reset_index()
     
-    # Sortera enligt vår önskade ordning
+    # Sortera ordning
     carat_order = ['Liten (< 0.5)', 'Medium (0.5-1.0)', 'Stor (1.0-1.5)', 'Mycket stor (1.5-2.0)', 'Exceptionell (>2.0)']
     group_summary['carat_group'] = pd.Categorical(group_summary['carat_group'], categories=carat_order, ordered=True)
     group_summary = group_summary.sort_values('carat_group')
@@ -513,7 +540,7 @@ elif page == "Karatgruppsanalys":
     # Detaljerad analys per karatgrupp
     st.subheader("Detaljerad analys per karatgrupp")
     
-    # Välj karatgrupp för djupare analys
+    # Välj karatgrupp
     selected_carat_group = st.selectbox(
         "Välj karatgrupp för detaljerad analys:",
         options=filtered_df['carat_group'].unique()
@@ -545,7 +572,6 @@ elif page == "Karatgruppsanalys":
         st.pyplot(fig_hist)
     
 
-    # Viktigt mönster - lägg till insikt
     st.info("""
     
     **Liten diamant → lågt pris, låg volym, hög klarhet/slipning/färg**
@@ -618,11 +644,20 @@ else:
     st.header("Slutsats")
 
     st.info("""
-    *"Vad har vi lärt oss?"*
+    *"Vad är det då som påverkar priset?"*
 
 Efter att ha analyserat tusentals diamanter ser vi tydligt att:
 
 - **Karatvikt är den starkaste prispåverkande faktorn**
-- **Färg, klarhet och slipning påverkar priset – men i mindre grad**
+- **Färg, klarhet och slipning påverkar priset – men...**
 - **Större diamanter tenderar att ha lägre genomsnittlig kvalitet**
+- **Det finns diamanter med hög kvalitet - men dessa blir extremt dyra**
+            
+Med hjälp av streamlits filter, har jag valt att inte ta med
+diamanter större än 3 karat, då dessa mätningar har gett ett otydligt resultat.
+Det finns även fall som i 'clarity' där priset sticker iväg vid ~ 1.7 karat, för att sedan droppa igen.
+Hade jag haft mer kunskap och tid så hade jag försökt identifiera de här diamanterna för att få ett "snyggare" diagram.
+            
+Å andra sidan - Är det fel data, eller finns de här diamanterna på riktigt? Förstör jag datan genom att filtrera för mycket?
+Det finns nog tillfälle där man vill ta bort 'outliers' och andra fall där man vill ha med all data.
 """)
